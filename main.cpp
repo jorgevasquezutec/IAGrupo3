@@ -60,22 +60,6 @@ public:
         std::cout << "prueba " << nodosh[nodosh.size() - 1] << "\n";
         matrix<double> moutput = getMatrix(3,3);
         matrices.push_back(moutput);
-        // CCERRO LA CLASE O ME PARECExdxd
-        // Ya no va hacer nada, cheqyen el grup
-        // xd
-        // estoy intentando volver a entrar pero nada jajaja xdxdxd
-        // QUiere que hacemos autodidactas :(
-        // no se si sienten lo mismo que yo, pero siento que el profe manda y manda y manda y manda cosas jajaj
-        // me estoy sofocando csm
-        // si fuera dos cusos que llevo normal pero estamos sofocadosxdxd
-
-        // y lo tenemos en tesis tmb c
-        // F :( xxcxdxdxdxd
-        //sube cambios reneato como esta
-
-
-                // pt llegar al punto de hacer catarsis por los comentarios de un archivo de C++. ahi te das cuenta que estas cagado
-        print("xd")
         std::cout << "constructor ok\n";
     }
 

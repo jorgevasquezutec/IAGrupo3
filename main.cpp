@@ -1,42 +1,83 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <bits/stdc++.h>
+#include <iomanip>
 
 // forward: input * primera matriz y backward(input)
 using namespace boost::numeric::ublas;
+
+matrix<double> getMatrix(int nRows, int nCols)
+{
+    std::random_device rd;
+    std::default_random_engine eng(rd());
+    std::uniform_real_distribution<double> distr(0, 10);
+
+    matrix<double> init(nRows, nCols);
+    for(size_t i=0; i<init.size1(); i++) {
+        for(size_t j=0; j<init.size2(); j++) {
+            init(i,j) = distr(eng);
+        }
+    }
+    return init;
+}
 
 class MLP
 {
 private:
     std::vector<double> input;
     std::vector<int> nodosh;
-    std::vector<matrix<double> > matrices;
-    std::vector<vector<double>> weights;
+    int output;
+    std::vector<matrix<double>> matrices;
     
 public:
     MLP(std::vector<double> input, std::vector<int> nodosh) {
+
         this->input = input;
         this->nodosh = nodosh;
+
+        // First layer 
+        matrix<double> init = getMatrix(input.size(), nodosh[0]);
+        matrices.push_back(init);
+
+        // Intermediate layers
+        for (int i = 1; i < nodosh.size()-1; ++i)
+        {
+            matrix<double> tmp = getMatrix(nodosh[i - 1], nodosh[i]);
+            matrices.push_back(tmp);
+        }
+
+        // Output Layer
+        matrix<double> moutput = getMatrix(nodosh[nodosh.size()-1],output);
+        matrices.push_back(moutput);
+        
     }
 
     void calculate() {
         int niveles_h = nodosh.size();
-        matrix<double> hk_prev(1, input.size()), hk(input.size(), nodosh[0]);
-        matrices.push_back(hk_prev);
-        // TODO: ingresar a hk_prev el input.
-        for (int i = 0; i < input.size(); ++i)
+        matrix<double> hk_prev(1, input.size());
+        //matrices.push_back(hk_prev);
+        // ingresar a hk_prev el input.
+        for (int i = 0; i <= niveles_h; ++i)
             hk_prev(0, i) = input[i];
-        // TODO: ingresar los nodos del nivel h 1 a hk
-
-        for (int i = 0; i < niveles_h; ++i) {
-            matrix<double> result = this->forward(hk_prev, hk);
-            matrices.push_back(hk);
-            hk_prev = hk;
-            hk = result;
+            //neta por nivel
+            matrix<double> hk_prev = this->forward(hk_prev, matrices[i]);
+            //funcion de activcacion.
+            std::transform(hk_prev.begin1(),hk_prev.begin2(),logistic);
+            //se actualiza el input.
+            hk = matrices[i]
+            // matrices[]
+            // hk_prev = hk;
+            // hk = result;
         }
     }
+
+
+    double logistic(double x){
+        return 1 / (1 + exp(-x));
+    }
     
-    void forward(matrix<double> hk_prev, matrix<double> hk)
+    
+    matrix<double> forward(matrix<double> hk_prev, matrix<double> hk)
     {
         return prod(hk_prev, hk);
     }

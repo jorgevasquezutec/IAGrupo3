@@ -6,7 +6,7 @@
 // forward: input * primera matriz y backward(input)
 using namespace boost::numeric::ublas;
 
-matrix<double> getMatrix(int &nRows, int &nCols)
+matrix<double> getMatrix(int const &nRows, int const &nCols)
 {
     std::random_device rd;
     std::default_random_engine eng(rd());
@@ -32,9 +32,9 @@ private:
     std::vector<matrix<double>> matrices;
 
 public:
-    MLP(std::vector<double> &input, std::vector<int> &nodosh,int &ouput)
+    MLP(std::vector<double> &input, std::vector<int> &nodosh,int &output)
     {
-        std::cout << "entrando a constructor\n";
+        // std::cout << "entrando a constructor\n";
         this->input = input;
         this->nodosh = nodosh;
         this->output = output;
@@ -43,24 +43,24 @@ public:
         matrix<double> init = getMatrix(input.size(), nodosh[0]);
         matrices.push_back(init);
 
-        std::cout << "inicializando matrices\n";
+        // std::cout << "inicializando matrices\n";
 
         // Intermediate layers
         
         for (int i = 1; i < nodosh.size(); ++i)
         {
-            std::cout << "i: " << i << "\n";
+            // std::cout << "i: " << i << "\n";
             matrix<double> tmp = getMatrix(nodosh[i - 1], nodosh[i]);
             matrices.push_back(tmp);
         }
 
-        std::cout << "intermediate layers done\n";
+        // std::cout << "intermediate layers done\n";
 
         // Output Layer
-        std::cout << "prueba " << nodosh[nodosh.size() - 1] << "\n";
-        matrix<double> moutput = getMatrix(3,3);
+        // std::cout << "prueba " << nodosh[nodosh.size() - 1] << "\n";
+        matrix<double> moutput = getMatrix(nodosh[nodosh.size() - 1],this->output);
         matrices.push_back(moutput);
-        std::cout << "constructor ok\n";
+        // std::cout << "constructor ok\n";
     }
 
     std::vector<double> forward()
@@ -119,7 +119,7 @@ int main()
     std::vector<int> nodosh{2, 3};
     int output = 3;
 
-    std::cout << "creando objeto mlp\n";
+    // std::cout << "creando objeto mlp\n";
 
     MLP mlp = MLP(input, nodosh, output);
     // auto tmp =mlp.forward();

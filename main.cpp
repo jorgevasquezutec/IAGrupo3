@@ -30,19 +30,23 @@ private:
     std::vector<int> nodosh;
     int output;
     std::vector<matrix<double>> matrices;
+    std::vector<std::vector<double>> deltas;
+    std::vector<int> sds;
 
 public:
-    MLP(std::vector<double> &input, std::vector<int> &nodosh,int &output)
+    MLP(std::vector<double> &input, std::vector<int> &nodosh,int &output,std::vector<int> sds)
     {
         // std::cout << "entrando a constructor\n";
         this->input = input;
         this->nodosh = nodosh;
         this->output = output;
+        this->sds = sds;
 
         // First layer
         matrix<double> init = getMatrix(input.size(), nodosh[0]);
         matrices.push_back(init);
-
+        //deltas por cada nodoh
+        
         // std::cout << "inicializando matrices\n";
 
         // Intermediate layers
@@ -52,6 +56,7 @@ public:
             // std::cout << "i: " << i << "\n";
             matrix<double> tmp = getMatrix(nodosh[i - 1], nodosh[i]);
             matrices.push_back(tmp);
+            
         }
 
         // std::cout << "intermediate layers done\n";
@@ -80,6 +85,7 @@ public:
             this->print(hk_prev);
         }
 
+
         return hk_prev;
     }
 
@@ -102,9 +108,22 @@ public:
         return vector_result;
     }
 
-    void backward()
+    void backward(double alpha)
     {
+        //Actualizar Wo
+        //necesitamos guardar las salidas por cada capa.
+        //por cada item de la ultima matriz 
+        //sd -> salida deseada
+        //si -> salida 
+        // dL/dWij = (Sj - Sdj)Sj(1-Sdj)Sihk 
 
+        auto lastM= matrices[matrices.size()-1];
+        for ( auto i=0; i<lastM.size1();i++){
+            for (auto j =0; i<lastM.size2();j++){
+                //lastM(i,j)= lastM(i,j) - alpha*();
+            }
+        }
+        
     }
 
     void print(std::vector<double> item){
@@ -118,11 +137,12 @@ int main()
 {
     std::vector<double> input{1, 2, 3, 4};
     std::vector<int> nodosh{2, 3};
+    std::vector<int> sds{1,4};
     int output = 3;
 
     // std::cout << "creando objeto mlp\n";
 
-    MLP mlp = MLP(input, nodosh, output);
+    MLP mlp = MLP(input, nodosh, output,sds);
     auto last =mlp.forward();
     return 0;
 }

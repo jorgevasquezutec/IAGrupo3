@@ -70,15 +70,15 @@ public:
         for (int i =0; i<  input.size();i++){
              hk_prev[i] = input[i];
         }
-        print(hk_prev);
-        // for (int i = 0; i < matrices.size(); ++i)
-        // {
-        //     hk_prev = this->calculate(hk_prev, matrices[i]);
-        //     for(int j=0; j<hk_prev.size();j++){
-        //         hk_prev[j]=logistic(hk_prev[j]);
-        //     }
-        //     this->print(hk_prev);
-        // }
+        //print(hk_prev);
+        for (int i = 0; i < matrices.size(); ++i)
+        {
+            hk_prev = this->calculate(hk_prev, matrices[i]);
+            for(int j=0; j<hk_prev.size();j++){
+                hk_prev[j]=logistic(hk_prev[j]);
+            }
+            this->print(hk_prev);
+        }
 
         return hk_prev;
     }
@@ -109,6 +109,7 @@ public:
 
     void print(std::vector<double> item){
         for(auto i: item) std::cout<< i <<" ";
+        std::cout<<std::endl;
     }
     
 };
@@ -122,6 +123,6 @@ int main()
     // std::cout << "creando objeto mlp\n";
 
     MLP mlp = MLP(input, nodosh, output);
-    // auto tmp =mlp.forward();
+    auto last =mlp.forward();
     return 0;
 }

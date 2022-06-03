@@ -2,9 +2,13 @@
 #include <boost/numeric/ublas/io.hpp>
 #include <bits/stdc++.h>
 #include <iomanip>
+#include <algorithm>
+#include <iostream>
 
 // forward: input * primera matriz y backward(input)
 using namespace boost::numeric::ublas;
+
+enum Function { SIGMOIDE, TANH, RELU};
 
 matrix<double> getMatrix(int const &nRows, int const &nCols)
 {
@@ -32,17 +36,20 @@ private:
     int output;
     std::vector<matrix<double>> matrices;
     std::vector<std::vector<double>> soutouts;
+    std::vector<double> error;
     std::vector<int> sds;
+    Function act_function;
 
 public:
-    MLP(std::vector<double> &input, std::vector<int> &nodosh, int &output, std::vector<int> sds)
+    MLP(std::vector<double> &input, std::vector<int> &nodosh, std::vector<int> &sds, Function func=SIGMOIDE)
     {
         // this->input;
         this->input = vector<double>(input.size());
         std::copy(input.begin(), input.end(), this->input.begin());
         this->nodosh = nodosh;
-        this->output = output;
+        this->output = sds.size();
         this->sds = sds;
+        this->act_function = func;
 
         // First layer
         matrix<double> init = getMatrix(input.size(), nodosh[0]);
@@ -69,20 +76,53 @@ public:
             std::vector<double> ss(hk_prev.size());
             for (int j = 0; j < hk_prev.size(); j++)
             {
-                ss[j] = hk_prev[j] = sigmoide(hk_prev[j]);
+                ss[j] = hk_prev[j] = handle_activation_func(hk_prev[j]);
             }
             soutouts.push_back(ss);
             // std::cout << "hk_final" << i << ": " << hk_prev << std::endl;
         }
-        // print2(deltas);
         return hk_prev;
+    }
+
+    double handle_activation_func(double x) {
+        switch (this->act_function) {
+            case SIGMOIDE: return this->sigmoide(x);
+            case TANH: return this->tanh(x);
+            case RELU: return this->relu(x);
+        }
     }
 
     double sigmoide(double x)
     {
         return 1 / (1 + std::exp(-x));
     }
-    void backward(double alpha)
+
+    double tanh(double x)
+    {
+        return (std::exp(x) - std::exp(-x)) / (std::exp(x) + std::exp(-x));
+    }
+
+    double relu(double x) 
+    {
+        return std::max(0.0, x);
+    }
+
+    void trainning(double epoch,double alpha){
+            
+            for(int i = 0; i < epoch; i++){
+                //forwards
+                auto  eOuput= this->forward();
+                //calcular error y guardar el error;
+                auto currentError=this->MSE(eOuput);
+                std::cout<<currentError<<std::endl;
+                //backwards
+                auto newWeighs = this->backward(alpha);
+                //update weights
+                this->updateW(newWeighs);
+            }
+    }
+
+    std::vector<matrix<double>> backward(double alpha)
     {
 
         auto matricres_cp = matrices; //copia de matrices
@@ -156,19 +196,28 @@ public:
                         changeM(j, k) = currentM(j, k) - alpha * (tmpdelta[k] * outputsK[j]);
                     }
                 }
-                 matricres_cp[i]=changeM;
+                matricres_cp[i]=changeM;
                 //cambiar el nuevo Curdelta
                 curDeltas.clear();
                 curDeltas.resize(tmpdelta.size());
                 curDeltas = tmpdelta;
             }
         }
+        return matricres_cp;
+    }
 
-        printMatrix(matrices);
-        matrices= matricres_cp;
-        printMatrix(matrices);
+    void updateW(std::vector<matrix<double>> current){
+         this->matrices=current;
+    }
 
-        // actualizar todow los W.
+
+    double MSE(vector<double> output){
+            double vError = 0;
+            for(unsigned i=0;i<output.size();i++){
+                vError += (output[i]-sds[i])*(output[i]-sds[i]);
+            }
+            vError=vError/output.size();
+            error.push_back(vError);
     }
 
     void print(std::vector<double> item)
@@ -198,13 +247,12 @@ int main()
     std::vector<double> input = {1, 2};
     std::vector<int> nodosh{3};
     std::vector<int> sds{2, 4};
-    int output = 2;
     // std::cout << "creando objeto mlp\n";
 
-    MLP mlp = MLP(input, nodosh, output, sds);
-    auto last = mlp.forward();
-    double alpha = 0.05;
-    mlp.backward(alpha);
+    MLP mlp = MLP(input, nodosh, sds);
+    // mlp.forward();
+    // double alpha = 0.05;
+    // mlp.backward(alpha);
 
     return 0;
 }

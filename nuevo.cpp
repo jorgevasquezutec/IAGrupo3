@@ -98,8 +98,6 @@ public:
             // hk con ouput
             {
                 auto tmpL = soutouts[i - 1];
-                outputsK.clear();
-                outputsK.resize(tmpL.size());
                 std::copy(tmpL.begin(), tmpL.end(), outputsK.begin());
                 //precalculo de los deltas
                 for (unsigned j = 0; j < output; j++)
@@ -114,7 +112,6 @@ public:
                         changeM(j, k) = currentM(j, k) - alpha * (curDeltas[i] * outputsK[j]);
                     }
                 }
-                matricres_cp[i]=changeM;
             }
             else
             {
@@ -122,51 +119,46 @@ public:
                 {
                     // input con h1
                     outputsK.clear();
-                    outputsK.resize(input.size());
-                    std::copy(input.begin(), input.end(), outputsK.begin());
+                    // outputsK.resize(input.size());
+                    // std::copy(input.begin(), input.end(), outputsK.begin());
                 }
                 else
                 {
                     // hk-1 con hk;
                     outputsK.clear();
-                    auto tmpO = soutouts[i + 1];
-                    outputsK.resize(tmpO.size());
-                    std::copy(tmpO.begin(), tmpO.end(), outputsK.begin());
+                    // auto tmpO = soutouts[i + 1];
+                    // outputsK.resize(tmpO.size());
+                    // std::copy(tmpO.begin(), tmpO.end(), outputsK.begin());
                 }
                 //variable delta temporal
-                std::vector<double> tmpdelta;
-                for (int k = 0; k < currentM.size2(); k++)
-                {
-                    double deltaTmp;
-                    //sumatoria sobre los deltas anteriores.
-                    for (int l = 0; l < curDeltas.size(); l++)
-                    {
-                        deltaTmp += curDeltas[i] * matrices[i + 1](k, l);
-                    }
-                    //calculo de deltas.
-                    deltaTmp *= curOuputs[k] * (1 - curOuputs[k]);
-                    tmpdelta.push_back(deltaTmp);
-                }
+                // std::vector<double> tmpdelta;
+                // for (int k = 0; k < currentM.size2(); k++)
+                // {
+                //     double deltaTmp;
+                //     //sumatoria sobre los deltas anteriores.
+                //     for (int l = 0; l < curDeltas.size(); l++)
+                //     {
+                //         deltaTmp += curDeltas[i] * matrices[i + 1](k, l);
+                //     }
+                //     //calculo de deltas.
+                //     deltaTmp *= curOuputs[k] * (1 - curOuputs[k]);
+                //     tmpdelta.push_back(deltaTmp);
+                // }
 
-                //actualizar los pesos changeM
-                for (int j = 0; j < currentM.size1(); j++)
-                {
-                    for (int k = 0; k < currentM.size2(); k++)
-                    {
-                        changeM(j, k) = currentM(j, k) - alpha * (tmpdelta[k] * outputsK[j]);
-                    }
-                }
-                 matricres_cp[i]=changeM;
-                //cambiar el nuevo Curdelta
-                curDeltas.clear();
-                curDeltas.resize(tmpdelta.size());
-                curDeltas = tmpdelta;
+                // //actualizar los pesos changeM
+                // for (int j = 0; j < currentM.size1(); j++)
+                // {
+                //     for (int k = 0; k < currentM.size2(); k++)
+                //     {
+                //         changeM(j, k) = currentM(j, k) - alpha * (tmpdelta[k] * outputsK[j]);
+                //     }
+                // }
+                // //cambiar el nuevo Curdelta
+                // curDeltas.clear();
+                // curDeltas.resize(tmpdelta.size());
+                // curDeltas = tmpdelta;
             }
         }
-
-        printMatrix(matrices);
-        matrices= matricres_cp;
-        printMatrix(matrices);
 
         // actualizar todow los W.
     }
@@ -184,11 +176,6 @@ public:
             for (auto j : i)
                 std::cout << j << " ";
             std::cout << std::endl;
-        }
-    }
-    void printMatrix (std::vector<matrix<double>> item){
-        for(auto i : item){
-            std::cout<<i<<std::endl;
         }
     }
 };

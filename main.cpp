@@ -17,7 +17,8 @@ matrix<double> getMatrix(int const &nRows, int const &nCols)
     {
         for (size_t j = 0; j < nCols; j++)
         {
-            init(i, j) = distr(eng);
+            // init(i, j) = distr(eng);
+            init(i, j) = 1;
         }
     }
     return init;
@@ -26,18 +27,19 @@ matrix<double> getMatrix(int const &nRows, int const &nCols)
 class MLP
 {
 private:
-    std::vector<double> input;
+    vector<double> input;
     std::vector<int> nodosh;
     int output;
     std::vector<matrix<double>> matrices;
-    std::vector<std::vector<double>> deltas;
+    std::vector<std::vector<double>> soutouts;
     std::vector<int> sds;
 
 public:
-    MLP(std::vector<double> &input, std::vector<int> &nodosh,int &output,std::vector<int> sds)
+    MLP(std::vector<double> &input, std::vector<int> &nodosh, int &output, std::vector<int> sds)
     {
-        // std::cout << "entrando a constructor\n";
-        this->input = input;
+        // this->input;
+        this->input = vector<double>(input.size());
+        std::copy(input.begin(), input.end(), this->input.begin());
         this->nodosh = nodosh;
         this->output = output;
         this->sds = sds;
@@ -45,104 +47,135 @@ public:
         // First layer
         matrix<double> init = getMatrix(input.size(), nodosh[0]);
         matrices.push_back(init);
-        //deltas por cada nodoh
-        
-        // std::cout << "inicializando matrices\n";
-
         // Intermediate layers
-        
         for (int i = 1; i < nodosh.size(); ++i)
         {
-            // std::cout << "i: " << i << "\n";
             matrix<double> tmp = getMatrix(nodosh[i - 1], nodosh[i]);
             matrices.push_back(tmp);
-            
         }
-
-        // std::cout << "intermediate layers done\n";
-
         // Output Layer
-        // std::cout << "prueba " << nodosh[nodosh.size() - 1] << "\n";
-        matrix<double> moutput = getMatrix(nodosh[nodosh.size() - 1],this->output);
+        matrix<double> moutput = getMatrix(nodosh[nodosh.size() - 1], this->output);
         matrices.push_back(moutput);
-        // std::cout << "constructor ok\n";
     }
 
-    std::vector<double> forward()
+    vector<double> forward()
     {
         int niveles_h = nodosh.size();
-        std::vector<double> hk_prev(input.size());
-        for (int i =0; i<  input.size();i++){
-             hk_prev[i] = input[i];
-        }
-        //print(hk_prev);
+        vector<double> hk_prev = this->input;
+
         for (int i = 0; i < matrices.size(); ++i)
         {
-            hk_prev = this->calculate(hk_prev, matrices[i]);
-            for(int j=0; j<hk_prev.size();j++){
-                hk_prev[j]=logistic(hk_prev[j]);
+            hk_prev = prod(hk_prev, matrices[i]);
+            std::vector<double> ss(hk_prev.size());
+            for (int j = 0; j < hk_prev.size(); j++)
+            {
+                ss[j] = hk_prev[j] = sigmoide(hk_prev[j]);
             }
-            this->print(hk_prev);
+
+            // if (matrices.size() - 1 == i)
+            // {
+            //     for (int j = 0; j < ss.size(); j++)
+            //     {
+            //         ss[j] = (ss[j] - sds[j]) * ss[j] * (1 - sds[j]);
+            //     }
+            // }
+            soutouts.push_back(ss);
+            std::cout << "hk_final" << i << ": " << hk_prev << std::endl;
         }
 
+        // print2(deltas);
 
         return hk_prev;
     }
 
-    double logistic(double x)
+    double sigmoide(double x)
     {
         return 1 / (1 + std::exp(-x));
     }
-
-    std::vector<double> calculate(std::vector<double> hk_prev, matrix<double> hk)
-    {
-        matrix<double> hk_prev_to_matrix(1, hk_prev.size());
-        for (int i = 0; i < hk_prev.size(); ++i) {
-            hk_prev_to_matrix(0, i) = hk_prev[i];
-        }
-        matrix<double> result = prod(hk_prev_to_matrix, hk);
-        std::vector<double> vector_result(hk.size2(), 0);
-        for (int i = 0; i < hk.size2(); ++i) {
-            vector_result[i] = result(0, i);
-        }
-        return vector_result;
-    }
-
     void backward(double alpha)
     {
-        //Actualizar Wo
-        //necesitamos guardar las salidas por cada capa.
-        //por cada item de la ultima matriz 
-        //sd -> salida deseada
-        //si -> salida 
-        // dL/dWij = (Sj - Sdj)Sj(1-Sdj)Sihk 
+        // Actualizar Wo
+        // necesitamos guardar las salidas por cada capa.
+        // por cada item de la ultima matriz
+        // sd -> salida deseada
+        // si -> salida
+        //  dL/dWij = (Sj - Sdj)Sj(1-Sdj)Sihk
+        auto matricres_cp = matrices;
+        std::vector<double> curDeltas;
 
-        auto lastM= matrices[matrices.size()-1];
-        for ( auto i=0; i<lastM.size1();i++){
-            for (auto j =0; i<lastM.size2();j++){
-                //lastM(i,j)= lastM(i,j) - alpha*();
-            }
+        for (unsigned i=matrices.size()-1; i>=0; i--){
+                auto currentM = matrices[i];
+                auto changeM = matricres_cp[i];
+                auto curOuputs = soutouts[i];
+
+                if(matrices.size()-1==i){
+                    // hk con ouput
+                    auto outputsK = soutouts[i-1];
+                    //precalculo el delta
+                    for(unsigned j=0; j<curOuputs.size(); j++){
+                        curDeltas.push_back( (curOuputs[j]- sds[j]) * sds[j] *(1-sds[j]) );
+                    }
+                    for (int j = 0; j < currentM.size1(); j++)
+                    {
+                        for (int k = 0; k < currentM.size2(); k++)
+                        {
+                            changeM(j, k) = currentM(j, k) - alpha * (curDeltas[i] * outputsK[j]);
+                        }
+                    }
+                }
+                else if(i==0){
+                    // input con h1
+                    auto outpusI = input;
+                    std::vector<double> tmpdelta;
+                    //preproserar el delta
+                    for( int j =0; j<currentM.size1(); j++){
+                        for (int k = 0; k< currentM.size2(); k++){
+                             
+                        }
+                    }
+
+
+
+                }
+                else {
+                    // hk-1 con hk;
+                }
+
+
         }
-        
+
     }
 
-    void print(std::vector<double> item){
-        for(auto i: item) std::cout<< i <<" ";
-        std::cout<<std::endl;
+
+    void print(std::vector<double> item)
+    {
+        for (auto i : item)
+            std::cout << i << " ";
+        std::cout << std::endl;
     }
-    
+    void print2(std::vector<std::vector<double>> item)
+    {
+        for (auto i : item)
+        {
+            for (auto j : i)
+                std::cout << j << " ";
+            std::cout << std::endl;
+        }
+    }
 };
 
 int main()
 {
-    std::vector<double> input{1, 2, 3, 4};
-    std::vector<int> nodosh{2, 3};
-    std::vector<int> sds{1,4};
-    int output = 3;
-
+    std::vector<double> input = {1, 2};
+    std::vector<int> nodosh{3};
+    std::vector<int> sds{2, 4};
+    int output = 2;
     // std::cout << "creando objeto mlp\n";
 
-    MLP mlp = MLP(input, nodosh, output,sds);
-    auto last =mlp.forward();
+    MLP mlp = MLP(input, nodosh, output, sds);
+    auto last = mlp.forward();
+    double alpha = 0.05;
+    mlp.backward(alpha);
+
     return 0;
 }

@@ -111,7 +111,7 @@ public:
                 {
                     for (int k = 0; k < changeM.size2(); k++)
                     {
-                        changeM(j, k) = currentM(j, k) - alpha * (curDeltas[i] * outputsK[j]);
+                        changeM(j, k) = currentM(j, k) - alpha * (curDeltas[k] * outputsK[j]);
                     }
                 }
                 matricres_cp[i]=changeM;

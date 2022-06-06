@@ -1,5 +1,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>
+// #include <boost/filesystem.hpp>
+// #include <boost/range/iterator_range.hpp>
 #include <bits/stdc++.h>
 #include <iomanip>
 #include <algorithm>
@@ -7,9 +9,11 @@
 #include "excel.h"
 #include "image.h"
 #include <random>
+#include <filesystem>
 
 // forward: input * primera matriz y backward(input)
 using namespace boost::numeric::ublas;
+using std::filesystem::directory_iterator;
 
 enum Function
 {
@@ -282,6 +286,15 @@ public:
     }
 };
 
+std::vector<Image> get_images_vectors_from(std::string folder_path) {
+    std::vector<Image> images;
+    int i = 0;
+    for (const auto & file : directory_iterator(folder_path)) {
+        images.push_back(Image(file.path()));
+    }
+    return images;
+}
+
 int main()
 {
 
@@ -289,10 +302,10 @@ int main()
     //     // Get the data from CSV File
     std::vector<std::vector<std::string> > dataList = reader.getData();
     
-    Image i = Image("feature_vectors/0010001.txt");
-    std::cout << i.get_label() << std::endl;
-    std::cout << i.get_feature_vector().size() << std::endl;
-    std::cout << i.get_feature_vector()[0] << std::endl;
+    std::vector<Image> training = get_images_vectors_from("feature_vectors/training/");
+    std::vector<Image> validation = get_images_vectors_from("feature_vectors/validation/");
+    std::vector<Image> testing = get_images_vectors_from("feature_vectors/testing/");
+
     // std::vector<double> input = {1, 2};
     // std::vector<int> nodosh{3};
     // std::vector<int> sds{1, 0};

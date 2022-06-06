@@ -8,6 +8,10 @@ import pywt
 from sklearn.model_selection import KFold
 from sklearn.model_selection import StratifiedKFold
 
+# sacar vector caracteristico
+# normalizar
+# guardar en carpeta
+
 random_seed = np.random.seed(42)
 
 def resize_and_save_img(src, destination_path):

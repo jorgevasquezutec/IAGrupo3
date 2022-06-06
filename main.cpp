@@ -10,6 +10,7 @@
 #include "image.h"
 #include <random>
 #include <filesystem>
+#include <cstdlib>
 
 // forward: input * primera matriz y backward(input)
 using namespace boost::numeric::ublas;
@@ -26,15 +27,15 @@ matrix<double> getMatrix(int const &nRows, int const &nCols)
 {
     std::random_device rd;
     std::default_random_engine eng(rd());
-    std::uniform_real_distribution<double> distr(1, 10);
+    std::uniform_real_distribution<double> distr(0, 1);
 
     matrix<double> init(nRows, nCols);
     for (size_t i = 0; i < nRows; i++)
     {
         for (size_t j = 0; j < nCols; j++)
         {
-            // init(i, j) = distr(eng);
-            init(i, j) = 1;
+            init(i, j) = distr(eng);
+            // init(i, j) = 1;
         }
     }
     return init;
@@ -46,8 +47,8 @@ private:
     vector<double> input;
     std::vector<int> nodosh;
     int output;
-    std::vector<matrix<double> > matrices;
-    std::vector<std::vector<double> > soutouts;
+    std::vector<matrix<double>> matrices;
+    std::vector<std::vector<double>> soutouts;
     std::vector<double> error;
     std::vector<int> sds;
     Function act_function;
@@ -93,6 +94,10 @@ public:
             soutouts.push_back(ss);
             // std::cout << "hk_final" << i << ": " << hk_prev << std::endl;
         }
+        hk_prev = softmax(hk_prev);
+        std::vector<double> stmp(hk_prev.size());
+        std::copy(hk_prev.begin(), hk_prev.end(), stmp.begin());
+        soutouts.push_back(stmp);
         return hk_prev;
     }
 
@@ -145,12 +150,13 @@ public:
         {
             // forwards
             auto eOuput = this->forward();
+            std::cout << "eOuput: " << eOuput << std::endl;
             // calcular error y guardar el error;
-            auto currentError = this->MSE(eOuput);
+            auto currentError = this->CEE(eOuput);
             std::cout << currentError << std::endl;
             // backwards
-            std::cout << "AcualW:";
-            printMatrix(this->matrices);
+            // std::cout << "AcualW:";
+            // printMatrix(this->matrices);
             auto newWeighs = this->backward(alpha);
             // update weights
             //  this->matrices = newWeighs;
@@ -160,7 +166,7 @@ public:
         }
     }
 
-    std::vector<matrix<double> > backward(double alpha)
+    std::vector<matrix<double>> backward(double alpha)
     {
 
         auto matricres_cp = matrices;  // copia de matrices
@@ -176,13 +182,16 @@ public:
             // hk con ouput
             {
                 auto tmpL = soutouts[i - 1];
+                curOuputs = soutouts[i + 1];
                 outputsK.clear();
                 outputsK.resize(tmpL.size());
                 std::copy(tmpL.begin(), tmpL.end(), outputsK.begin());
                 // precalculo de los deltas
                 for (unsigned j = 0; j < output; j++)
                 {
-                    curDeltas.push_back((curOuputs[j] - sds[j]) * curOuputs[j] * (1 - curOuputs[j]));
+                    // auto deltai = (curOuputs[j] - sds[j]) * curOuputs[j] * (1 - curOuputs[j])
+                    auto deltai = curOuputs[j] - sds[j];
+                    curDeltas.push_back(deltai);
                 }
                 // actualizar los pesos changeM
                 for (int j = 0; j < changeM.size1(); j++)
@@ -245,9 +254,35 @@ public:
         return matricres_cp;
     }
 
-    void updateW(std::vector<matrix<double> > current)
+    void updateW(std::vector<matrix<double>> current)
     {
         this->matrices = current;
+    }
+
+    vector<double> softmax(vector<double> x)
+    {
+        vector<double> result(x.size());
+        double sum = 0.0;
+        for (unsigned i = 0; i < x.size(); i++)
+        {
+            sum += exp(x[i]);
+        }
+
+        for (unsigned i = 0; i < x.size(); i++)
+        {
+            result[i] = (exp(x[i]) / sum);
+        }
+        return result;
+    }
+
+    double CEE(vector<double> output)
+    {
+        double vError = 0;
+        for (unsigned i = 0; i < output.size(); i++)
+        {
+            vError += (sds[i] * log(output[i]));
+        }
+        return vError * -1.0;
     }
 
     double MSE(vector<double> output)
@@ -268,7 +303,7 @@ public:
             std::cout << i << " ";
         std::cout << std::endl;
     }
-    void print2(std::vector<std::vector<double> > item)
+    void print2(std::vector<std::vector<double>> item)
     {
         for (auto i : item)
         {
@@ -277,7 +312,7 @@ public:
             std::cout << std::endl;
         }
     }
-    void printMatrix(std::vector<matrix<double> > item)
+    void printMatrix(std::vector<matrix<double>> item)
     {
         for (auto i : item)
         {
@@ -286,10 +321,12 @@ public:
     }
 };
 
-std::vector<Image> get_images_vectors_from(std::string folder_path) {
+std::vector<Image> get_images_vectors_from(std::string folder_path)
+{
     std::vector<Image> images;
     int i = 0;
-    for (const auto & file : directory_iterator(folder_path)) {
+    for (const auto &file : directory_iterator(folder_path))
+    {
         images.push_back(Image(file.path()));
     }
     return images;
@@ -298,23 +335,41 @@ std::vector<Image> get_images_vectors_from(std::string folder_path) {
 int main()
 {
 
-    CSVReader reader("iris.data");
-    //     // Get the data from CSV File
-    std::vector<std::vector<std::string> > dataList = reader.getData();
-    
+    // CSVReader reader("iris.data");
+    // //     // Get the data from CSV File
+    // std::vector<std::vector<std::string>> dataList = reader.getData();
+
     std::vector<Image> training = get_images_vectors_from("feature_vectors/training/");
     std::vector<Image> validation = get_images_vectors_from("feature_vectors/validation/");
     std::vector<Image> testing = get_images_vectors_from("feature_vectors/testing/");
 
-    // std::vector<double> input = {1, 2};
-    // std::vector<int> nodosh{3};
+    auto input = training[0].get_feature_vector();
+    auto itemLabel = training[0].get_label();
+    std::vector<int> sds;
+    for (auto i : itemLabel)
+    {
+        if (i == '0')
+        {
+            sds.push_back(0);
+        }
+        else
+        {
+            sds.push_back(1);
+        }
+
+        // double num_double = std::atof(i);
+    }
+
+    // std::cout<<std::endl;
+    // std::cout<<itemLabel<<std::endl;
+
+    // std::vector<double> input = {0.84, 0.33};
+    std::vector<int> nodosh{100, 50, 25, 10};
     // std::vector<int> sds{1, 0};
+    // // 0.5,0     -(1log(0.5) + 1log(0))
     // // std::cout << "creando objeto mlp\n";
 
-    // MLP mlp = MLP(input, nodosh, sds);
-    // mlp.trainning(100, 0.5);
-    // mlp.forward();
-    // double alpha = 0.05;
-    // mlp.backward(alpha);
+    MLP mlp = MLP(input, nodosh, sds);
+    mlp.trainning(100, 0.06);
     return 0;
 }

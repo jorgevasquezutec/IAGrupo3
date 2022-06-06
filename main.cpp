@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <iostream>
 #include "excel.h"
+#include "image.h"
+#include <random>
 
 // forward: input * primera matriz y backward(input)
 using namespace boost::numeric::ublas;
@@ -40,8 +42,8 @@ private:
     vector<double> input;
     std::vector<int> nodosh;
     int output;
-    std::vector<matrix<double>> matrices;
-    std::vector<std::vector<double>> soutouts;
+    std::vector<matrix<double> > matrices;
+    std::vector<std::vector<double> > soutouts;
     std::vector<double> error;
     std::vector<int> sds;
     Function act_function;
@@ -154,7 +156,7 @@ public:
         }
     }
 
-    std::vector<matrix<double>> backward(double alpha)
+    std::vector<matrix<double> > backward(double alpha)
     {
 
         auto matricres_cp = matrices;  // copia de matrices
@@ -239,7 +241,7 @@ public:
         return matricres_cp;
     }
 
-    void updateW(std::vector<matrix<double>> current)
+    void updateW(std::vector<matrix<double> > current)
     {
         this->matrices = current;
     }
@@ -262,7 +264,7 @@ public:
             std::cout << i << " ";
         std::cout << std::endl;
     }
-    void print2(std::vector<std::vector<double>> item)
+    void print2(std::vector<std::vector<double> > item)
     {
         for (auto i : item)
         {
@@ -271,7 +273,7 @@ public:
             std::cout << std::endl;
         }
     }
-    void printMatrix(std::vector<matrix<double>> item)
+    void printMatrix(std::vector<matrix<double> > item)
     {
         for (auto i : item)
         {
@@ -287,6 +289,10 @@ int main()
     //     // Get the data from CSV File
     std::vector<std::vector<std::string> > dataList = reader.getData();
     
+    Image i = Image("feature_vectors/0010001.txt");
+    std::cout << i.get_label() << std::endl;
+    std::cout << i.get_feature_vector().size() << std::endl;
+    std::cout << i.get_feature_vector()[0] << std::endl;
     // std::vector<double> input = {1, 2};
     // std::vector<int> nodosh{3};
     // std::vector<int> sds{1, 0};

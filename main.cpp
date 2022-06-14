@@ -35,7 +35,7 @@ matrix<double> getMatrix(int const &nRows, int const &nCols)
         for (size_t j = 0; j < nCols; j++)
         {
             init(i, j) = distr(eng);
-            // init(i, j) = 1;
+            // init(i, j) = 1;j
         }
     }
     return init;

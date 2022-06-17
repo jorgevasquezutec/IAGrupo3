@@ -44,28 +44,27 @@ matrix<double> getMatrix(int const &nRows, int const &nCols)
 class MLP
 {
 private:
-    vector<double> input;
+    int length_input;
     std::vector<int> nodosh;
     int output;
     std::vector<matrix<double>> matrices;
     std::vector<std::vector<double>> soutouts;
     std::vector<double> error;
-    std::vector<int> sds;
+    // std::vector<int> sds;
+    int length_output;
     Function act_function;
 
 public:
-    MLP(std::vector<double> &input, std::vector<int> &nodosh, std::vector<int> &sds, Function func = SIGMOIDE)
+    MLP(int length_input, std::vector<int> &nodosh, int length_output, Function func = SIGMOIDE)
     {
-        // this->input;
-        this->input = vector<double>(input.size());
-        std::copy(input.begin(), input.end(), this->input.begin());
+        
+        this->length_input =length_input;
         this->nodosh = nodosh;
-        this->output = sds.size();
-        this->sds = sds;
+        this->output = length_output;
         this->act_function = func;
 
         // First layer
-        matrix<double> init = getMatrix(input.size(), nodosh[0]);
+        matrix<double> init = getMatrix(length_input, nodosh[0]);
         matrices.push_back(init);
         // Intermediate layers
         for (int i = 1; i < nodosh.size(); ++i)
@@ -78,10 +77,10 @@ public:
         matrices.push_back(moutput);
     }
 
-    vector<double> forward()
+    vector<double> forward(vector<double> &input)
     {
         int niveles_h = nodosh.size();
-        vector<double> hk_prev = this->input;
+        vector<double> hk_prev =input;
 
         for (int i = 0; i < matrices.size(); ++i)
         {
@@ -140,33 +139,46 @@ public:
 
     double relu(double x)
     {
-        return std::max(0.0, x);
+        // return std::max(0.0, x);
+        if (x < 0)
+            return 0.1;
+        else
+            return 1;
     }
 
-    void trainning(double epoch, double alpha)
+    void trainning(double epoch, double alpha,std::vector<Image> &images)
     {
 
         for (int i = 0; i < epoch; i++)
         {
-            // forwards
-            auto eOuput = this->forward();
-            std::cout << "eOuput: " << eOuput << std::endl;
-            // calcular error y guardar el error;
-            auto currentError = this->CEE(eOuput);
-            std::cout << currentError << std::endl;
-            // backwards
-            // std::cout << "AcualW:";
-            // printMatrix(this->matrices);
-            auto newWeighs = this->backward(alpha);
-            // update weights
-            //  this->matrices = newWeighs;
-            //  this->updateW(newWeighs);
-            //  std::cout<<"Update:";
-            //  printMatrix(this->matrices);
+
+            for(int j = 0; j< images.size(); j++){
+
+                auto Rinput = images[j].get_feature_vector();
+                vector<double> input(Rinput.size());
+                std::copy(Rinput.begin(), Rinput.end(), input.begin());
+                auto itemLabel = images[j].get_label();
+                auto output = getLabelVector(itemLabel);
+                // forwards
+                auto eOuput = this->forward(input);
+                std::cout << "eOuput: " << eOuput << std::endl;
+                // calcular error y guardar el error;
+                auto currentError = this->CEE(eOuput,output);
+                std::cout << currentError << std::endl;
+                // backwards
+                // std::cout << "AcualW:";
+                // printMatrix(this->matrices);
+                auto newWeighs = this->backward(alpha,output,input);
+                // update weights
+                //  this->matrices = newWeighs;
+                //  this->updateW(newWeighs);
+                //  std::cout<<"Update:";
+                //  printMatrix(this->matrices);
+            }
         }
     }
 
-    std::vector<matrix<double>> backward(double alpha)
+    std::vector<matrix<double>> backward(double alpha, std::vector<double> &sds,vector<double> &input)
     {
 
         auto matricres_cp = matrices;  // copia de matrices
@@ -209,7 +221,7 @@ public:
                 {
                     // input con h1
                     outputsK.clear();
-                    outputsK.resize(input.size());
+                    outputsK.resize(length_input);
                     std::copy(input.begin(), input.end(), outputsK.begin());
                 }
                 else
@@ -275,7 +287,7 @@ public:
         return result;
     }
 
-    double CEE(vector<double> output)
+    double CEE(vector<double> output, std::vector<double> &sds )
     {
         double vError = 0;
         for (unsigned i = 0; i < output.size(); i++)
@@ -285,7 +297,7 @@ public:
         return vError * -1.0;
     }
 
-    double MSE(vector<double> output)
+    double MSE(vector<double> output, std::vector<double> &sds)
     {
         double vError = 0;
         for (unsigned i = 0; i < output.size(); i++)
@@ -319,6 +331,23 @@ public:
             std::cout << i << std::endl;
         }
     }
+
+    std::vector<double> getLabelVector(std::string label)
+    {
+        std::vector<double> result;
+        for (unsigned i = 0; i < label.size(); i++)
+        {
+            if (label[i] == '1')
+            {
+                result.push_back(1);
+            }
+            else
+            {
+                result.push_back(0);
+            }
+        }
+        return result;
+    }
 };
 
 std::vector<Image> get_images_vectors_from(std::string folder_path)
@@ -343,33 +372,33 @@ int main()
     std::vector<Image> validation = get_images_vectors_from("feature_vectors/validation/");
     std::vector<Image> testing = get_images_vectors_from("feature_vectors/testing/");
 
-    auto input = training[0].get_feature_vector();
-    auto itemLabel = training[0].get_label();
-    std::vector<int> sds;
-    for (auto i : itemLabel)
-    {
-        if (i == '0')
-        {
-            sds.push_back(0);
-        }
-        else
-        {
-            sds.push_back(1);
-        }
+    // auto input = training[0].get_feature_vector();
+    // auto itemLabel = training[0].get_label();
+    // std::vector<int> sds;
+    // for (auto i : itemLabel)
+    // {
+    //     if (i == '0')
+    //     {
+    //         sds.push_back(0);
+    //     }
+    //     else
+    //     {
+    //         sds.push_back(1);
+    //     }
 
-        // double num_double = std::atof(i);
-    }
+    //     // double num_double = std::atof(i);
+    // }
 
     // std::cout<<std::endl;
     // std::cout<<itemLabel<<std::endl;
 
     // std::vector<double> input = {0.84, 0.33};
-    std::vector<int> nodosh{100, 50, 25, 10};
+    std::vector<int> nodosh{10};
     // std::vector<int> sds{1, 0};
     // // 0.5,0     -(1log(0.5) + 1log(0))
     // // std::cout << "creando objeto mlp\n";
 
-    MLP mlp = MLP(input, nodosh, sds);
-    mlp.trainning(100, 0.06);
+    MLP mlp = MLP(180, nodosh, 10,RELU);
+    mlp.trainning(100, 0.06,training);
     return 0;
 }

@@ -4,3 +4,6 @@ main.out
 test.out
 .DS_Store
 **/.DS_Store
+main
+output.txt
+test2.cpp

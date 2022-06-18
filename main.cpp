@@ -179,17 +179,20 @@ public:
                 std::copy(Rinput.begin(), Rinput.end(), input.begin());
                 auto itemLabel = images[j].get_label();
                 auto output = getLabelVector(itemLabel);
+                print(output);
                 // forwards
                 auto eOuput = this->forward(input);
+                std::cout<<"Output: "<<eOuput<<std::endl;
                 auto predit_l = get_predict_label(eOuput);
-                std::cout<<"Predict Lable:"<<predit_l<<std::endl;
-                std::cout<<"Image Lable:"<<images[j].get_label_index()<<std::endl; 
+                // std::cout<<"Predict Lable:"<<predit_l<<std::endl;
+                // std::cout<<"Image Lable:"<<images[j].get_label_index()<<std::endl; 
                 if (predit_l == images[j].get_label_index())
                 {
+                    std::cout<<"Correct"<<std::endl;
                     correct++;
                 }
 
-                std::cout << "eOuput: " << eOuput << std::endl;
+                // std::cout << "eOuput: " << eOuput << std::endl;
                 // calcular error y guardar el error;
                 auto currentError = this->CEE(eOuput, output);
                 std::cout << currentError << std::endl;
@@ -240,9 +243,7 @@ public:
                     for (int k = 0; k < changeM.size2(); k++)
                     {
                         changeM(j, k) = currentM(j, k) - alpha * (curDeltas[k] * outputsK[j]);
-                    }    // std::vector<int> sds{1, 0};
-    // // 0.5,0     -(1log(0.5) + 1log(0))
-    // // std::cout << "creando objeto mlp\n";
+                    }   
                 }
                 matricres_cp[i] = changeM;
             }
@@ -259,7 +260,7 @@ public:
                 {
                     // hk-1 con hk;
                     outputsK.clear();
-                    auto tmpO = soutouts[i + 1];
+                    auto tmpO = soutouts[i - 1];
                     outputsK.resize(tmpO.size());
                     std::copy(tmpO.begin(), tmpO.end(), outputsK.begin());
                 }
@@ -274,7 +275,7 @@ public:
                         deltaTmp += curDeltas[l] * matrices[i + 1](k, l);
                     }
                     // calculo de deltas.
-                    deltaTmp *= curOuputs[k] * (1 - curOuputs[k]);
+                    deltaTmp *= (curOuputs[k] * (1 - curOuputs[k]));
                     tmpdelta.push_back(deltaTmp);
                 }
 
@@ -293,6 +294,7 @@ public:
                 curDeltas = tmpdelta;
             }
         }
+        this->matrices.clear();
         this->matrices = matricres_cp;
         return matricres_cp;
     }
@@ -426,9 +428,9 @@ int main()
     std::vector<Image> training = get_images_vectors_from("feature_vectors/training/");
     std::vector<Image> validation = get_images_vectors_from("feature_vectors/validation/");
     std::vector<Image> testing = get_images_vectors_from("feature_vectors/testing/");
-    std::vector<int> nodosh{12,10};
+    std::vector<int> nodosh{10,10};
 
     MLP mlp = MLP(180, nodosh, 10, SIGMOIDE);
-    mlp.trainning(50, 0.1, training);
+    mlp.trainning(5, 0.10, training);
     return 0;
 }

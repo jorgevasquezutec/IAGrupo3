@@ -15,6 +15,7 @@
 // forward: input * primera matriz y backward(input)
 using namespace boost::numeric::ublas;
 using std::filesystem::directory_iterator;
+typedef boost::numeric::ublas::matrix<double> mat;
 
 enum Function
 {
@@ -28,16 +29,18 @@ matrix<double> getMatrix(int const &nRows, int const &nCols)
     std::random_device rd;
     std::default_random_engine eng(rd());
     std::uniform_real_distribution<double> distr(0, 1);
+    std::setprecision(2);
 
     matrix<double> init(nRows, nCols);
     for (size_t i = 0; i < nRows; i++)
     {
         for (size_t j = 0; j < nCols; j++)
         {
-            init(i, j) = distr(eng);
-            // init(i, j) = 1;j
+            init(i, j) =  distr(eng);
+            // init(i, j) = 1
         }
     }
+    // std::cout << init << std::endl;
     return init;
 }
 
@@ -57,8 +60,8 @@ private:
 public:
     MLP(int length_input, std::vector<int> &nodosh, int length_output, Function func = SIGMOIDE)
     {
-        
-        this->length_input =length_input;
+
+        this->length_input = length_input;
         this->nodosh = nodosh;
         this->output = length_output;
         this->act_function = func;
@@ -80,7 +83,7 @@ public:
     vector<double> forward(vector<double> &input)
     {
         int niveles_h = nodosh.size();
-        vector<double> hk_prev =input;
+        vector<double> hk_prev = input;
 
         for (int i = 0; i < matrices.size(); ++i)
         {
@@ -93,7 +96,9 @@ public:
             soutouts.push_back(ss);
             // std::cout << "hk_final" << i << ": " << hk_prev << std::endl;
         }
+        // std::cout <<"Prev sofmax"<< hk_prev << std::endl;
         hk_prev = softmax(hk_prev);
+        // std::cout<<"Post sofmax"<<hk_prev << std::endl;
         std::vector<double> stmp(hk_prev.size());
         std::copy(hk_prev.begin(), hk_prev.end(), stmp.begin());
         soutouts.push_back(stmp);
@@ -141,19 +146,33 @@ public:
     {
         // return std::max(0.0, x);
         if (x < 0)
-            return 0.1;
+            return 0;
         else
             return 1;
     }
 
-    void trainning(double epoch, double alpha,std::vector<Image> &images)
+    int get_predict_label(vector<double> &res)
+    {
+        //01010101
+        // std::cout<<"Prediction: "<<res<<std::endl;
+        int label= label = std::distance(res.begin(), std::max_element(res.begin(), res.end()));
+        return label;
+    }
+
+    void trainning(double epoch, double alpha, std::vector<Image> images)
     {
 
+        std::random_device rd;
+        std::default_random_engine eng(rd());
         for (int i = 0; i < epoch; i++)
         {
-
-            for(int j = 0; j< images.size(); j++){
-
+            std::shuffle(std::begin(images), std::end(images), eng);
+            double acurracy = 0.0;
+            double correct = 0.0;
+            // std::cout<<"Epoch: "<<i<<std::endl;
+            int randomImages = 100;
+            for (int j = 0; j < randomImages; j++)
+            {
                 auto Rinput = images[j].get_feature_vector();
                 vector<double> input(Rinput.size());
                 std::copy(Rinput.begin(), Rinput.end(), input.begin());
@@ -161,24 +180,33 @@ public:
                 auto output = getLabelVector(itemLabel);
                 // forwards
                 auto eOuput = this->forward(input);
-                std::cout << "eOuput: " << eOuput << std::endl;
+                auto predit_l = get_predict_label(eOuput);
+                // std::cout<<"Predict Lable:"<<predit_l<<std::endl;
+                // std::cout<<"Image Lable:"<<images[j].get_label_index()<<std::endl; 
+                if (predit_l == images[j].get_label_index())
+                {
+                    correct++;
+                }
+
+                // std::cout << "eOuput: " << eOuput << std::endl;
                 // calcular error y guardar el error;
-                auto currentError = this->CEE(eOuput,output);
-                std::cout << currentError << std::endl;
+                auto currentError = this->CEE(eOuput, output);
+                // std::cout << currentError << std::endl;
                 // backwards
                 // std::cout << "AcualW:";
                 // printMatrix(this->matrices);
-                auto newWeighs = this->backward(alpha,output,input);
+                auto newWeighs = this->backward(alpha, output, input);
                 // update weights
                 //  this->matrices = newWeighs;
                 //  this->updateW(newWeighs);
                 //  std::cout<<"Update:";
                 //  printMatrix(this->matrices);
             }
+            std::cout<<correct/images.size()<<std::endl;
         }
     }
 
-    std::vector<matrix<double>> backward(double alpha, std::vector<double> &sds,vector<double> &input)
+    std::vector<matrix<double>> backward(double alpha, std::vector<double> &sds, vector<double> &input)
     {
 
         auto matricres_cp = matrices;  // copia de matrices
@@ -201,7 +229,7 @@ public:
                 // precalculo de los deltas
                 for (unsigned j = 0; j < output; j++)
                 {
-                    // auto deltai = (curOuputs[j] - sds[j]) * curOuputs[j] * (1 - curOuputs[j])
+                    //auto deltai = (curOuputs[j] - sds[j]) * curOuputs[j] * (1 - curOuputs[j]);
                     auto deltai = curOuputs[j] - sds[j];
                     curDeltas.push_back(deltai);
                 }
@@ -273,6 +301,30 @@ public:
 
     vector<double> softmax(vector<double> x)
     {
+        // SOFTMAX 1
+        // vector<double> result(x.size());
+        // double m, sum, constant;
+        // m = -INFINITY;
+        // for (unsigned i = 0; i < x.size(); i++)
+        // {
+        //     if (m < x[i]) {
+		// 	    m = x[i];
+		//     }
+        // }
+        // sum = 0.0;
+        // for (unsigned i = 0; i < x.size(); i++)
+        // {
+        //     sum += exp(x[i] - m) ;
+        // }
+     	// constant = m + log(sum);
+
+        // for (unsigned i = 0; i < x.size(); i++)
+        // {
+        //     result[i] = (exp(x[i] - constant) );
+        // }
+        // return result;
+
+        // SOFTMAX 2
         vector<double> result(x.size());
         double sum = 0.0;
         for (unsigned i = 0; i < x.size(); i++)
@@ -287,14 +339,14 @@ public:
         return result;
     }
 
-    double CEE(vector<double> output, std::vector<double> &sds )
+    double CEE(vector<double> output, std::vector<double> &sds)
     {
         double vError = 0;
         for (unsigned i = 0; i < output.size(); i++)
         {
             vError += (sds[i] * log(output[i]));
         }
-        return vError * -1.0;
+        return -1.0*vError;
     }
 
     double MSE(vector<double> output, std::vector<double> &sds)
@@ -393,12 +445,12 @@ int main()
     // std::cout<<itemLabel<<std::endl;
 
     // std::vector<double> input = {0.84, 0.33};
-    std::vector<int> nodosh{10};
+    std::vector<int> nodosh{90,45,10};
     // std::vector<int> sds{1, 0};
     // // 0.5,0     -(1log(0.5) + 1log(0))
     // // std::cout << "creando objeto mlp\n";
 
-    MLP mlp = MLP(180, nodosh, 10,RELU);
-    mlp.trainning(100, 0.06,training);
+    MLP mlp = MLP(180, nodosh, 10, SIGMOIDE);
+    mlp.trainning(150, 0.2, training);
     return 0;
 }

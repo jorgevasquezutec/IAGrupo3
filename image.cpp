@@ -19,3 +19,10 @@ std::vector<double> Image::get_feature_vector() {
 std::string Image::get_label() {
     return this->label;
 }
+
+int Image::get_label_index() {
+    std::string label = this->get_label();
+    int i = 0;
+    while (i < label.size() && label[i] != '1') ++i;
+    return i;
+}

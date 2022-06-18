@@ -87,6 +87,7 @@ public:
 
         for (int i = 0; i < matrices.size(); ++i)
         {
+            //neta
             hk_prev = prod(hk_prev, matrices[i]);
             std::vector<double> ss(hk_prev.size());
             for (int j = 0; j < hk_prev.size(); j++)
@@ -171,7 +172,7 @@ public:
             double correct = 0.0;
             // std::cout<<"Epoch: "<<i<<std::endl;
             int randomImages = 100;
-            for (int j = 0; j < randomImages; j++)
+            for (int j = 0; j < images.size(); j++)
             {
                 auto Rinput = images[j].get_feature_vector();
                 vector<double> input(Rinput.size());
@@ -181,17 +182,17 @@ public:
                 // forwards
                 auto eOuput = this->forward(input);
                 auto predit_l = get_predict_label(eOuput);
-                // std::cout<<"Predict Lable:"<<predit_l<<std::endl;
-                // std::cout<<"Image Lable:"<<images[j].get_label_index()<<std::endl; 
+                std::cout<<"Predict Lable:"<<predit_l<<std::endl;
+                std::cout<<"Image Lable:"<<images[j].get_label_index()<<std::endl; 
                 if (predit_l == images[j].get_label_index())
                 {
                     correct++;
                 }
 
-                // std::cout << "eOuput: " << eOuput << std::endl;
+                std::cout << "eOuput: " << eOuput << std::endl;
                 // calcular error y guardar el error;
                 auto currentError = this->CEE(eOuput, output);
-                // std::cout << currentError << std::endl;
+                std::cout << currentError << std::endl;
                 // backwards
                 // std::cout << "AcualW:";
                 // printMatrix(this->matrices);
@@ -202,7 +203,7 @@ public:
                 //  std::cout<<"Update:";
                 //  printMatrix(this->matrices);
             }
-            std::cout<<correct/images.size()<<std::endl;
+            std::cout<<"Acurracy:"<<correct/images.size()<<std::endl;
         }
     }
 
@@ -229,7 +230,7 @@ public:
                 // precalculo de los deltas
                 for (unsigned j = 0; j < output; j++)
                 {
-                    //auto deltai = (curOuputs[j] - sds[j]) * curOuputs[j] * (1 - curOuputs[j]);
+                    // auto deltai = (curOuputs[j] - sds[j]) * curOuputs[j] * (1 - curOuputs[j]);
                     auto deltai = curOuputs[j] - sds[j];
                     curDeltas.push_back(deltai);
                 }
@@ -239,7 +240,9 @@ public:
                     for (int k = 0; k < changeM.size2(); k++)
                     {
                         changeM(j, k) = currentM(j, k) - alpha * (curDeltas[k] * outputsK[j]);
-                    }
+                    }    // std::vector<int> sds{1, 0};
+    // // 0.5,0     -(1log(0.5) + 1log(0))
+    // // std::cout << "creando objeto mlp\n";
                 }
                 matricres_cp[i] = changeM;
             }
@@ -423,34 +426,9 @@ int main()
     std::vector<Image> training = get_images_vectors_from("feature_vectors/training/");
     std::vector<Image> validation = get_images_vectors_from("feature_vectors/validation/");
     std::vector<Image> testing = get_images_vectors_from("feature_vectors/testing/");
-
-    // auto input = training[0].get_feature_vector();
-    // auto itemLabel = training[0].get_label();
-    // std::vector<int> sds;
-    // for (auto i : itemLabel)
-    // {
-    //     if (i == '0')
-    //     {
-    //         sds.push_back(0);
-    //     }
-    //     else
-    //     {
-    //         sds.push_back(1);
-    //     }
-
-    //     // double num_double = std::atof(i);
-    // }
-
-    // std::cout<<std::endl;
-    // std::cout<<itemLabel<<std::endl;
-
-    // std::vector<double> input = {0.84, 0.33};
-    std::vector<int> nodosh{90,45,10};
-    // std::vector<int> sds{1, 0};
-    // // 0.5,0     -(1log(0.5) + 1log(0))
-    // // std::cout << "creando objeto mlp\n";
+    std::vector<int> nodosh{12,10};
 
     MLP mlp = MLP(180, nodosh, 10, SIGMOIDE);
-    mlp.trainning(150, 0.2, training);
+    mlp.trainning(50, 0.1, training);
     return 0;
 }

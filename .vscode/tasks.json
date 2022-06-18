@@ -5,11 +5,11 @@
             "label": "C/C++: g++ compilar archivo activo",
             "command": "/usr/bin/g++",
             "args": [
-                "-fdiagnostics-color=always",
-                "-g",
-                "${file}",
+                "-std=c++17",
+                "main.cpp",
+                "image.cpp",
                 "-o",
-                "${fileDirname}/${fileBasenameNoExtension}"
+                "main"
             ],
             "options": {
                 "cwd": "${fileDirname}"

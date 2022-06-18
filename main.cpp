@@ -172,6 +172,7 @@ public:
             double correct = 0.0;
             // std::cout<<"Epoch: "<<i<<std::endl;
             int randomImages = 100;
+            float s = 0;
             for (int j = 0; j < images.size(); j++)
             {
                 auto Rinput = images[j].get_feature_vector();
@@ -196,6 +197,7 @@ public:
                 // calcular error y guardar el error;
                 auto currentError = this->CEE(eOuput, output);
                 // std::cout << currentError << std::endl;
+                s += currentError;
                 // backwards
                 // std::cout << "AcualW:";
                 // printMatrix(this->matrices);
@@ -206,7 +208,8 @@ public:
                 //  std::cout<<"Update:";
                 //  printMatrix(this->matrices);
             }
-            std::cout<<"Acurracy:"<<correct/images.size()<<std::endl;
+            std::cout << s / images.size() << std::endl;
+            // std::cout<<"Acurracy:"<<correct/images.size()<<std::endl;
         }
     }
 
@@ -346,12 +349,19 @@ public:
 
     double CEE(vector<double> output, std::vector<double> &sds)
     {
-        double vError = 0;
-        for (unsigned i = 0; i < output.size(); i++)
-        {
-            vError += (sds[i] * log(output[i]));
+        // std::cout << output.size() << " " << sds.size() << std::endl;
+        // double vError = 0;
+        // for (unsigned i = 0; i < output.size(); i++)
+        // {
+        //     vError += (sds[i] * log(output[i]));
+        // }
+        // return -1.0*vError;
+
+        double error = 0;
+        for (int i = 0; i < output.size(); ++i) {
+            error = -sds[i] * log(output[i]) - (1 - sds[i]) * log(1 - output[i]);
         }
-        return -1.0*vError;
+        return error;
     }
 
     double MSE(vector<double> output, std::vector<double> &sds)
